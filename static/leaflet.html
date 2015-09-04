@@ -1,0 +1,55 @@
+<html>
+<head>
+	<title>Test for Leaflet Library</title>
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.css" />
+	<script src="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.js"></script>
+	<style>
+		#map { height: 480px; }
+	</style>
+
+	<script>
+var popup = L.popup();
+
+function onMapClick(e) {
+    popup
+        .setLatLng(e.latlng)
+        .setContent("You clicked the map at " + e.latlng.toString())
+        .openOn(map);
+}
+	</script>
+</head>
+<body>
+<h3>Leftlet Application</h3>
+<div id="map"></div>
+
+	<script>
+	var map = L.map('map').setView([40.7073, -74.006], 13);
+	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
+    maxZoom: 18,
+    id: 'jackyma.nbhe11nj',
+    accessToken: 'pk.eyJ1IjoiamFja3ltYSIsImEiOiJiMzJiM2Y4OGE2ODk3Y2NhMjcyZDgwN2QxYmRkZWUyZSJ9.GsWNZSqJziWBlci-06UaoA'
+}).addTo(map);
+
+	var marker = L.marker([40.7073, -74.006]).addTo(map);
+	
+	var circle = L.circle([40.72, -74.016], 500, {
+    color: 'red',
+    fillColor: '#f03',
+    fillOpacity: 0.5
+	}).addTo(map);
+	
+	var polygon = L.polygon([
+    [40.70, -74.01],
+    [40.71, -74.03],
+    [40.705, -74.04]
+	]).addTo(map);
+	
+	marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
+circle.bindPopup("I am a circle.");
+polygon.bindPopup("I am a polygon.");
+
+map.on('click', onMapClick);
+	</script>
+</body>
+</html>
