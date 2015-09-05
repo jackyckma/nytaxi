@@ -1,0 +1,80 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+NY Taxi - Blog
+{% endblock title %}
+
+{% block header %}
+Blog Editor
+{% endblock header %}
+
+{% block extrastyle %}
+
+{% endblock extrastyle %}
+
+{% block body %}
+
+<form class="form-horizontal" action="{{url_for('blogging.editor', post_id=post_id or None)}}" method="POST">
+
+    {{ form.hidden_tag() }}
+
+    <fieldset>
+        <!-- Text input-->
+		<div class="row">
+			<div class="small-12 columns">          
+        <div class="form-group">
+            <h4>Title</h4>
+            <div class="input-group col-md-8 col-md-offset-2">
+                {{form.title(placeholder="Title", id="title", class="form-control", required="" )}}
+            </div>
+        </div>
+        </div>
+        </div>
+
+		<div class="row">
+			<div class="small-12 columns">  
+        <div class="form-group">
+            <div class="input-group col-md-8 col-md-offset-2">
+                {{form.text(placeholder="Blog text", required="", data_provide="markdown", rows="16")}}
+                              
+				<b>Learn more about <a href="http://en.wikipedia.org/wiki/Markdown" target="_blank">MarkDown</a></b><br/><br/>
+                
+            </div>
+        </div>
+        </div>
+        </div>
+        
+        <!-- Text input-->
+		<div class="row">
+			<div class="small-12 columns">          
+        <div class="form-group">
+            <label class="col-md-offset-2 control-label" for="tags">Tags</label>
+
+            <div class="input-group col-md-8 col-md-offset-2">
+                {{form.tags(id="tags", placeholder="Comma separated tags", class="form-control input-md", required="")}}
+            </div>
+        </div>
+        </div>
+        </div>
+        <!-- draft input-->
+        <!--div class="form-group">
+            <div class="col-md-offset-2">
+                <label>
+                    {{form.draft(id="draft")}} draft?
+                </label>
+            </div>
+        </div-->
+		<div class="row">
+			<div class="small-12 columns">  
+        <div class="form-group">
+                {{ form.submit(id="submit", class="button small") }}
+        </div>
+        </div>
+        </div>
+    </fieldset>
+</form>
+{% endblock body %}
+
+{% block extrajs %}
+
+{% endblock extrajs %}
