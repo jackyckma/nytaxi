@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, render_template_string
+from flask import Flask, render_template, request, redirect, render_template_string, url_for, send_from_directory
 from sqlalchemy import create_engine, MetaData
 from flask.ext.login import UserMixin, LoginManager, login_user, logout_user
 from flask.ext.blogging import SQLAStorage, BloggingEngine
@@ -62,10 +62,12 @@ def logout():
     logout_user()
     return redirect("/")
 
-#For Testing
-@app.route("/test/")
-def test_page():
-    return render_template('test.html')
+@app.route('/blogfile/<filename>')
+def blogfile(filename):
+    # show the user profile for that user
+    return send_from_directory('static/blogfiles', filename, as_attachment=True)
+    
+
 
 #Regular Navigations
 @app.route("/")

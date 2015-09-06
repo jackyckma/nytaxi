@@ -8,15 +8,28 @@ NY Taxi - References
 References
 {% endblock header %}
 
+{% block extrastyle %}
+<style>
+a.reference{
+	font-family: 'Lato', sans-serif;
+	font-weight:normal;
+	color:#64470F;
+}
+a.reference:hover{
+	color:#DCA73C;
+}
+</style>
+{% endblock extrastyle %}
+
 {%block body %}
 <div class="row">
 	<div class="small-12 columns lato">
 		<b>Data Source</b>
 		<ul>				
-			<li><a href="http://chriswhong.com/open-data/foil_nyc_taxi/">FOILing NYC's Taxi Trip Data</a></li>
-			<li><a href="http://www.andresmh.com/nyctaxitrips/">NYC Taxi Trips (zip files)</a></li>
-			<li><a href="http://publish.illinois.edu/dbwork/open-data/">Open data：2010-2013 New York City Taxi Data</a></li>
-			<li><a href="http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml">TLC Trip Record Data</a></li>						
+			<li><a class="reference" href="http://chriswhong.com/open-data/foil_nyc_taxi/">FOILing NYC's Taxi Trip Data</a></li>
+			<li><a class="reference" href="http://www.andresmh.com/nyctaxitrips/">NYC Taxi Trips (zip files)</a></li>
+			<li><a class="reference" href="http://publish.illinois.edu/dbwork/open-data/">Open data：2010-2013 New York City Taxi Data</a></li>
+			<li><a class="reference" href="http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml">TLC Trip Record Data</a></li>						
 		</ul>
 	</div>
 </div>
@@ -24,14 +37,14 @@ References
 	<div class="small-12 columns lato">
 		<b>Visualization</b>
 		<ul>				
-			<li><a href="http://googlemapsmania.blogspot.co.uk/2014/11/mapping-new-york-taxi-data.html">Mapping New York Taxi Data"</a></li>					
-			<li><a href="http://nyctaxi.herokuapp.com">NYC Taxis: A Day in the Life</a></li>
-			<li><a href="http://chriswhong.com/data-visualization/taxitechblog1/">Taxi TechBlog 1: Data Prep and Backend</a></li>
-			<li><a href="http://chriswhong.com/open-data/taxi-techblog-2-leaflet-d3-and-other-frontend-fun/">Taxi Techblog 2: Leaflet, D3, and other Frontend Fun</a></li>
-			<li><a href="http://googlecloudplatform.blogspot.hk/2014/12/geofencing-340-million-nyc-taxi-with-google-cloud-dataflow.html">Geofencing 340 million NYC taxi locations with Google Cloud Dataflow</a></li>						
-			<li><a href="http://hafen.github.io/taxi/#background">Exploration of NYC Taxi Data</a></li>		
-			<li><a href="http://taxi.imagework.com/">NYC Taxi Holiday Visualization</a></li>
-			<li><a href="http://www.hubcab.org/#15.00/40.7334/-73.9897">Exploring New York City taxi trails</a></li>
+			<li><a class="reference" href="http://googlemapsmania.blogspot.co.uk/2014/11/mapping-new-york-taxi-data.html">Mapping New York Taxi Data"</a></li>					
+			<li><a class="reference" href="http://nyctaxi.herokuapp.com">NYC Taxis: A Day in the Life</a></li>
+			<li><a class="reference" href="http://chriswhong.com/data-visualization/taxitechblog1/">Taxi TechBlog 1: Data Prep and Backend</a></li>
+			<li><a class="reference" href="http://chriswhong.com/open-data/taxi-techblog-2-leaflet-d3-and-other-frontend-fun/">Taxi Techblog 2: Leaflet, D3, and other Frontend Fun</a></li>
+			<li><a class="reference" href="http://googlecloudplatform.blogspot.hk/2014/12/geofencing-340-million-nyc-taxi-with-google-cloud-dataflow.html">Geofencing 340 million NYC taxi locations with Google Cloud Dataflow</a></li>						
+			<li><a class="reference" href="http://hafen.github.io/taxi/#background">Exploration of NYC Taxi Data</a></li>		
+			<li><a class="reference" href="http://taxi.imagework.com/">NYC Taxi Holiday Visualization</a></li>
+			<li><a class="reference" href="http://www.hubcab.org/#15.00/40.7334/-73.9897">Exploring New York City taxi trails</a></li>
 		</ul>
 	</div>
 </div>
@@ -39,10 +52,10 @@ References
 	<div class="small-12 columns lato">
 		<b>Discussions</b>
 		<ul>				
-			<li><a href="https://medium.com/@vijayp/of-taxis-and-rainbows-f6bc289679a1">On Taxis and Rainbows: Lessons from NYC's improperly anonymized taxi logs</a></li>
-			<li><a href="http://www.forbes.com/sites/federicoguerrini/2015/04/09/living-in-new-york-this-app-will-tell-you-which-is-cheaper-uber-or-a-taxi/">Which Is Cheaper To Use In NYC: Uber Or A Taxi? Big Data Will Solve The Dilemma</a></li>
-			<li><a href="http://arxiv.org/pdf/1503.03021v1.pdf">OpenStreetCab: Exploiting Taxi Mobility Patterns in New York City to Reduce Commuter Costs</a></li>
-			<li><a href="http://fivethirtyeight.com/features/public-transit-should-be-ubers-new-best-friend/">Public Transit Should Be Uber's New Best Friend</a></li>
+			<li><a class="reference" href="https://medium.com/@vijayp/of-taxis-and-rainbows-f6bc289679a1">On Taxis and Rainbows: Lessons from NYC's improperly anonymized taxi logs</a></li>
+			<li><a class="reference" href="http://www.forbes.com/sites/federicoguerrini/2015/04/09/living-in-new-york-this-app-will-tell-you-which-is-cheaper-uber-or-a-taxi/">Which Is Cheaper To Use In NYC: Uber Or A Taxi? Big Data Will Solve The Dilemma</a></li>
+			<li><a class="reference" href="http://arxiv.org/pdf/1503.03021v1.pdf">OpenStreetCab: Exploiting Taxi Mobility Patterns in New York City to Reduce Commuter Costs</a></li>
+			<li><a class="reference" href="http://fivethirtyeight.com/features/public-transit-should-be-ubers-new-best-friend/">Public Transit Should Be Uber's New Best Friend</a></li>
 		</ul>
 	</div>
 </div>						
@@ -50,10 +63,10 @@ References
 	<div class="small-12 columns lato">
 		<b>Background Information</b>				
 		<ul>
-			<li><a href="https://en.wikipedia.org/wiki/Taxicabs_of_New_York_City">Wikipedia: Taxicabs of New York City</a></li>
-			<li><a href="http://www.nyc.gov/html/tlc/html/passenger/taxicab_rate.shtml">Yellow Taxicab Rate of Fare</a></li>
-			<li><a href="https://www.youtube.com/watch?v=djkJq27cOEE&list=PLOU2XLYxmsIKk5-eHOvuTwJvMkbV1DyUW">Open data unleashed: The NYC taxi dataset hackathon</a></li>
-			<li><a href="https://www.goarro.com">ARRO - an application for Taxi</a></li>
+			<li><a class="reference" href="https://en.wikipedia.org/wiki/Taxicabs_of_New_York_City">Wikipedia: Taxicabs of New York City</a></li>
+			<li><a class="reference" href="http://www.nyc.gov/html/tlc/html/passenger/taxicab_rate.shtml">Yellow Taxicab Rate of Fare</a></li>
+			<li><a class="reference" href="https://www.youtube.com/watch?v=djkJq27cOEE&list=PLOU2XLYxmsIKk5-eHOvuTwJvMkbV1DyUW">Open data unleashed: The NYC taxi dataset hackathon</a></li>
+			<li><a class="reference" href="https://www.goarro.com">ARRO - an application for Taxi</a></li>
 		</ul>
 	</div>
 </div>
@@ -61,12 +74,12 @@ References
 	<div class="small-12 columns lato">
 		<b>Besides Taxi</b>
 		<ul>				
-			<li><a href="https://github.com/fivethirtyeight/uber-tlc-foil-response">Uber TLC FOIL Response</a></li>
-			<li><a href="https://news.encinc.com/2015/08/28/Uber-NYC-Trip-Data-from-April-to-Sept.-2014-40234">Uber Dataset Information</a></li>
-			<li><a href="http://www.businessinsider.com/uber-vs-taxi-pricing-by-city-2014-10">These Animated Charts Tell You Everything About Uber Prices In 21 Cities</a></li>						
-			<li><a href="http://fivethirtyeight.com/features/uber-is-serving-new-yorks-outer-boroughs-more-than-taxis-are/">Uber Is Serving New York's Outer Boroughs More Than Taxis Are</a></li>
-			<li><a href="http://web.mta.info/nyct/facts/ridership/">Introduction to Subway Ridership</a></li>
-			<li><a href="https://nycopendata.socrata.com">NYC Open Data</a></li>						
+			<li><a class="reference" href="https://github.com/fivethirtyeight/uber-tlc-foil-response">Uber TLC FOIL Response</a></li>
+			<li><a class="reference" href="https://news.encinc.com/2015/08/28/Uber-NYC-Trip-Data-from-April-to-Sept.-2014-40234">Uber Dataset Information</a></li>
+			<li><a class="reference" href="http://www.businessinsider.com/uber-vs-taxi-pricing-by-city-2014-10">These Animated Charts Tell You Everything About Uber Prices In 21 Cities</a></li>						
+			<li><a class="reference" href="http://fivethirtyeight.com/features/uber-is-serving-new-yorks-outer-boroughs-more-than-taxis-are/">Uber Is Serving New York's Outer Boroughs More Than Taxis Are</a></li>
+			<li><a class="reference" href="http://web.mta.info/nyct/facts/ridership/">Introduction to Subway Ridership</a></li>
+			<li><a class="reference" href="https://nycopendata.socrata.com">NYC Open Data</a></li>						
 		</ul>
 	</div>
 </div>
@@ -74,16 +87,16 @@ References
 	<div class="small-12 columns lato">
 		<b>Technologies / Libraries / Frameworks</b>
 		<ul>				
-			<li><a href="http://flask.pocoo.org/docs/0.10/">Flask</a></li>
-			<li><a href="http://flask-blogging.readthedocs.org/en/latest/">Flask-Blogging</a></li>
-			<li><a href="https://www.mapbox.com">Mapbox</a></li>
-			<li><a href="http://leafletjs.com">Leaflet JavaScript Library</a></li>
-			<li><a href="http://foundation.zurb.com">Zurb Foundation</a></li>
-			<li><a href="http://d3js.org">D3.js</a></li>
-			<li><a href="http://dimplejs.org">Dimple</a></li>
-			<li><a href="https://www.google.com/fonts">Google Fonts</a></li>
-			<li><a href="http://scikit-learn.org/stable/">Scikit-learn</a></li>
-			<li><a href="https://www.mongodb.org">MongoDB</a></li>
+			<li><a class="reference" href="http://flask.pocoo.org/docs/0.10/">Flask</a></li>
+			<li><a class="reference" href="http://flask-blogging.readthedocs.org/en/latest/">Flask-Blogging</a></li>
+			<li><a class="reference" href="https://www.mapbox.com">Mapbox</a></li>
+			<li><a class="reference" href="http://leafletjs.com">Leaflet JavaScript Library</a></li>
+			<li><a class="reference" href="http://foundation.zurb.com">Zurb Foundation</a></li>
+			<li><a class="reference" href="http://d3js.org">D3.js</a></li>
+			<li><a class="reference" href="http://dimplejs.org">Dimple</a></li>
+			<li><a class="reference" href="https://www.google.com/fonts">Google Fonts</a></li>
+			<li><a class="reference" href="http://scikit-learn.org/stable/">Scikit-learn</a></li>
+			<li><a class="reference" href="https://www.mongodb.org">MongoDB</a></li>
 		</ul>
 	</div>
 </div>	
