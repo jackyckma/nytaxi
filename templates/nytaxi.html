@@ -8,10 +8,76 @@ NY Taxi
 NY Taxi
 {% endblock header %}
 
-{%block body %}
-<div class="row">
-	<div class="small-12 columns lato">
-		<p>Page for Data Visualization</p>
-	</div>
-</div>
-{% endblock body %}
+<!--extra style for map-->
+{% block extrastyle %}
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.css" />
+	<style>
+	body, html {
+    padding: 0;
+    margin: 0;
+	}
+	html, body, #map {
+    	height: 100%;
+    	min-height: 100px;
+	}
+	</style>
+{% endblock extrastyle %}
+
+<!--extra js for map-->
+{% block extrajs_front %}
+	<script src="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.js"></script>
+	
+	<script>
+	var popup = L.popup();
+
+	function onMapClick(e) {
+		popup
+		.setLatLng(e.latlng)
+		.setContent("You clicked the map at " + e.latlng.toString())
+		.openOn(map);
+	}
+	</script>
+{% endblock extrajs_front %}
+
+{%block rightpane %}
+<div id="map"></div>
+{% endblock rightpane %}
+
+
+{% block extrajs %}
+	<script>
+	$(window).resize(function() {
+		$("#map").height($(window).height());
+	});
+	
+	$("#map").height($(window).height());
+	
+	var map = L.map('map').setView([40.7073, -74.006], 13);
+	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
+		maxZoom: 18,
+		id: 'jackyma.nbhe11nj',
+		accessToken: 'pk.eyJ1IjoiamFja3ltYSIsImEiOiJiMzJiM2Y4OGE2ODk3Y2NhMjcyZDgwN2QxYmRkZWUyZSJ9.GsWNZSqJziWBlci-06UaoA'
+		}).addTo(map);
+
+	var marker = L.marker([40.7073, -74.006]).addTo(map);
+
+	var circle = L.circle([40.72, -74.016], 500, {
+		color: 'red',
+		fillColor: '#f03',
+		fillOpacity: 0.5
+		}).addTo(map);
+
+	var polygon = L.polygon([
+		[40.70, -74.01],
+		[40.71, -74.03],
+		[40.705, -74.04]
+		]).addTo(map);
+
+	marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
+	circle.bindPopup("I am a circle.");
+	polygon.bindPopup("I am a polygon.");
+
+	map.on('click', onMapClick);
+	</script>
+{% endblock extrajs %}	

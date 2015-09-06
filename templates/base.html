@@ -1,4 +1,4 @@
-﻿
+
 <!DOCTYPE html>
 <!--[if IE 9]><html class="lt-ie10" lang="en" > <![endif]-->
 <html class="no-js" lang="en" >
@@ -13,13 +13,16 @@ NY Taxi
 </title>
 <!-- Google Font-->
 <link href="https://fonts.googleapis.com/css?family=Lato:400,700,900,300" rel="stylesheet" type="text/css"/> 
+<!-- Foundation Icons-->
+<link href='http://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css' rel='stylesheet' type='text/css'/>
 <!-- If you are using the CSS version, only link these 2 files, you may add app.css to use for your overrides if you like -->
 <link rel="stylesheet" href="{{url_for('static', filename='css/normalize.css')}}"/>
 <link rel="stylesheet" href="{{url_for('static', filename='css/foundation.css')}}"/>
 <!-- If you are using the gem version, you need this only -->
 <link rel="stylesheet" href="{{url_for('static', filename='css/app.css')}}"/>
 <script src="{{url_for('static', filename='js/vendor/modernizr.js')}}"></script>
-<style>	.lato {
+<style>	
+.lato {
 	font-family: 'Lato', sans-serif;
 }
 .inner-wrap {
@@ -53,11 +56,13 @@ NY Taxi
 }
 .left-off-canvas-toggle {
 	display: none;
-	margin-top: 1rem;
-	margin-left: 1rem;
-	font-size: 3rem;
+	margin: 1rem;
+	font-size: 2rem;
 	color: #333;
 	transition: all .25s ease-in-out;
+	position:absolute;
+	right:1rem;
+	z-index:+2;
 }
 .left-off-canvas-toggle: focus {
 	color: #333;
@@ -66,18 +71,18 @@ NY Taxi
 	color: #8c8c8c;
 	transition: all .25s ease-in-out;
 }
-.ad-block {
-	margin-bottom: 2rem;
-}
+
 
 </style> 
 {% block extrastyle %}
 {% endblock extrastyle %}
+
+{% block extrajs_front %}
+{% endblock extrajs_front %}
 </head>
 
 <body>
 <!-- body content here -->
-	<link href='http://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css' rel='stylesheet' type='text/css'/>
 	<div class="off-canvas-wrap move-right" data-offcanvas>
 		<div class="inner-wrap">
 			<a class="left-off-canvas-toggle" href="#">
@@ -105,6 +110,7 @@ NY Taxi
 				</div>
 			</aside>
 <!-- main content goes here -->
+			{% block rightpane %}
 			<header class="row">
 				<div class="small-12 columns">
 					<h1 class="lato">{% block header %}NY TAXI{% endblock header %}</h1>
@@ -117,6 +123,7 @@ NY Taxi
 				</div>
 			</div>
 			{% endblock body %}
+			{% endblock rightpane %}
 <!-- close the off-canvas menu -->
 			<a class="exit-off-canvas"></a>
 <!-- class inner-wrap -->
@@ -144,6 +151,8 @@ NY Taxi
 	$(window).resize(function() {
 		sideNav();
 	});
+	
+	sideNav();
 	</script>
 
     {% block extrajs %}
