@@ -1,8 +1,12 @@
-from flask import Flask, render_template, request, redirect, render_template_string, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, render_template_string, url_for, send_from_directory, jsonify
+import flask.json
 from sqlalchemy import create_engine, MetaData
 from flask.ext.login import UserMixin, LoginManager, login_user, logout_user
 from flask.ext.blogging import SQLAStorage, BloggingEngine
+import pandas as pd
+import geojson
 
+print 'starting...'
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "secret"  # for WTF-forms and login
 app.config["BLOGGING_SITENAME"] = "NY Taxi"
@@ -17,6 +21,40 @@ sql_storage = SQLAStorage(engine, metadata=meta)
 blog_engine = BloggingEngine(app, sql_storage)
 login_manager = LoginManager(app)
 meta.create_all(bind=engine)
+
+# static variables
+"""
+fields in taxi_df
+=================
+medallion
+hack_license
+vendor_id
+rate_code
+store_and_fwd_flag
+pickup_datetime
+dropoff_datetime
+passenger_count
+trip_time_in_secs
+trip_distance
+pickup_longitude
+pickup_latitude
+dropoff_longitude
+dropoff_latitude
+fare_amount
+surcharge
+mta_tax
+tip_amount
+tolls_amount
+total_amount
+"""
+appdata={}
+appdata['taxi_df'] = pd.read_csv('data/nytaxi2013_sample_clean.csv', index_col=None, parse_dates=['pickup_datetime', 'dropoff_datetime'], date_parser = (lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))) 
+#DEBUG
+#sliced to [:1000] to reduce load time
+appdata['pickup_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['pickup_longitude'][:1000], appdata['taxi_df']['pickup_latitude'][:1000])])
+appdata['dropoff_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['dropoff_longitude'][:1000], appdata['taxi_df']['dropoff_latitude'][:1000])])
+
+print 'appdata loaded...'
 
 # user class for providing authentication
 class User(UserMixin):
@@ -89,6 +127,11 @@ def references_page():
 @app.route("/about/")
 def about_page():
     return render_template('about.html')
+
+@app.route("/loaddata", methods=["GET", "POST"])
+def load_taxi_data():
+	print 'AJAX load data'
+	return geojson.dumps(appdata['pickup_location'])
 
 
 if __name__ == "__main__":

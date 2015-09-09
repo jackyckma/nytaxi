@@ -25,18 +25,20 @@ NY Taxi
 
 <!--extra js for map-->
 {% block extrajs_front %}
+	<script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.js"></script>
 	
 	<script>
 	var popup = L.popup();
-
+	
 	function onMapClick(e) {
 		popup
 		.setLatLng(e.latlng)
 		.setContent("You clicked the map at " + e.latlng.toString())
 		.openOn(map);
 	}
-	</script>
+
+	</script>		
 {% endblock extrajs_front %}
 
 {%block rightpane %}
@@ -46,6 +48,15 @@ NY Taxi
 
 {% block extrajs %}
 	<script>
+	var geojsonMarkerOptions = {
+		radius: 8,
+		fillColor: "#ff7800",
+		color: "#000",
+		weight: 1,
+		opacity: 1,
+		fillOpacity: 0.8
+	};
+	
 	$(window).resize(function() {
 		$("#map").height($(window).height());
 	});
@@ -60,24 +71,20 @@ NY Taxi
 		accessToken: 'pk.eyJ1IjoiamFja3ltYSIsImEiOiJiMzJiM2Y4OGE2ODk3Y2NhMjcyZDgwN2QxYmRkZWUyZSJ9.GsWNZSqJziWBlci-06UaoA'
 		}).addTo(map);
 
-	var marker = L.marker([40.7073, -74.006]).addTo(map);
+	$.getJSON("/loaddata", function(data) {
+		var geojson = L.geoJson(data, {
+			pointToLayer: function (feature, latlng) {
+				return L.circleMarker(latlng, geojsonMarkerOptions);
+			}
+		});
+//		map.fitBounds(geojson.getBounds());
+		geojson.addTo(map);
+	});	
 
-	var circle = L.circle([40.72, -74.016], 500, {
-		color: 'red',
-		fillColor: '#f03',
-		fillOpacity: 0.5
-		}).addTo(map);
 
-	var polygon = L.polygon([
-		[40.70, -74.01],
-		[40.71, -74.03],
-		[40.705, -74.04]
-		]).addTo(map);
-
-	marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
-	circle.bindPopup("I am a circle.");
-	polygon.bindPopup("I am a polygon.");
 
 	map.on('click', onMapClick);
 	</script>
+	
+
 {% endblock extrajs %}	
