@@ -6,7 +6,9 @@ from flask.ext.blogging import SQLAStorage, BloggingEngine
 import pandas as pd
 import geojson
 
-print 'starting...'
+
+##initializing the server
+print 'initializing...'
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "secret"  # for WTF-forms and login
 app.config["BLOGGING_SITENAME"] = "NY Taxi"
@@ -48,11 +50,19 @@ tolls_amount
 total_amount
 """
 appdata={}
-appdata['taxi_df'] = pd.read_csv('data/nytaxi2013_sample_clean.csv', index_col=None, parse_dates=['pickup_datetime', 'dropoff_datetime'], date_parser = (lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))) 
+samplefiles=['data/nytaxi2013sample.csv', 'data/nytaxi2014sample.csv']
+print 'loading {0}...'.format(samplefiles[0]), 
+appdata['taxi_df'] = pd.read_csv(samplefiles[0], index_col=None, parse_dates=['pickup_datetime', 'dropoff_datetime'], date_parser = (lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))) 
+print 'ok'
+
+print 'loading {0}...'.format(samplefiles[1]), 
+appdata['taxi_df'] = appdata['taxi_df'].append(pd.read_csv(samplefiles[1], index_col=None, parse_dates=['pickup_datetime', 'dropoff_datetime'], date_parser = (lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))))
+print 'ok'
 #DEBUG
-#sliced to [:1000] to reduce load time
-appdata['pickup_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['pickup_longitude'][:1000], appdata['taxi_df']['pickup_latitude'][:1000])])
-appdata['dropoff_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['dropoff_longitude'][:1000], appdata['taxi_df']['dropoff_latitude'][:1000])])
+#sliced to reduce load time
+samplepoints=5000
+appdata['pickup_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['pickup_longitude'][:samplepoints], appdata['taxi_df']['pickup_latitude'][:samplepoints])])
+appdata['dropoff_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['dropoff_longitude'][:samplepoints], appdata['taxi_df']['dropoff_latitude'][:samplepoints])])
 
 print 'appdata loaded...'
 
