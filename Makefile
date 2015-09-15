@@ -31,9 +31,17 @@ dataholidays:
 
 ### Make database
 database:
-	create database (postgres)
-	import all data
-	delete source files?
+	#drop old table
+	#create table
+	#import 2013, 2014 sample data
+	#need to config password file [~/pdpass.conf] (http://www.postgresql.org/docs/9.4/static/libpq-pgpass.html)
+
+	PATH=%PATH%;c:\PostgreSQL\9.3\bin	
+	#need to enable POSTGIS Extension on database
+	psql -d nytaxi -U postgres -c "CREATE EXTENSION postgis;"
+	psql -d nytaxi -U postgres -f nytaxi.sql
+	
+	#delete source files?
 
 ### Make sampling data from raw data
 ### Warning: Takes a long time
