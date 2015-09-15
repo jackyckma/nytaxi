@@ -53,6 +53,4 @@ samplingdata:
 
 ### Cleanup...
 clean:
-	rm -r data/*
-	rm -f data/.make_*
 
