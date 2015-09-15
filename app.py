@@ -5,27 +5,38 @@ from flask.ext.login import UserMixin, LoginManager, login_user, logout_user
 from flask.ext.blogging import SQLAStorage, BloggingEngine
 import pandas as pd
 import geojson
-
+from geoalchemy2 import Geometry
+import os
+import settings
 
 ##initializing the server
-print 'initializing...'
-app = Flask(__name__)
-app.config["SECRET_KEY"] = "secret"  # for WTF-forms and login
-app.config["BLOGGING_SITENAME"] = "NY Taxi"
-app.config["BLOGGING_URL_PREFIX"] = "/blog"
-app.config["BLOGGING_SITEURL"] = "http://localhost:8000"
-#app.config["BLOGGING_GOOGLE_ANALYTICS"] = ""
+print 'Initializing...',
 
+#Set environment variable nytaxi_config to change the config
+nytaxi_config=os.getenv('nytaxi_config', 'DEBUG')
+print '[MODE={0}]...'.format(nytaxi_config),
+
+app = Flask(__name__)
+if nytaxi_config == 'DEBUG':
+    app.config.from_object(settings.DevelopmentConfig)
+elif nytaxi_config == 'TEST':
+    app.config.from_object(settings.TestingConfig)
+else:
+    app.config.from_object(settings.ProductionConfig)
+    
 # extensions
-engine = create_engine('sqlite:///blog.db')
+engine = create_engine(app.config['DATABASE_URI']) 
 meta = MetaData()
 sql_storage = SQLAStorage(engine, metadata=meta)
 blog_engine = BloggingEngine(app, sql_storage)
 login_manager = LoginManager(app)
 meta.create_all(bind=engine)
 
-# static variables
-"""
+print 'ok'
+
+
+# data fields
+'''
 fields in taxi_df
 =================
 medallion
@@ -48,23 +59,20 @@ mta_tax
 tip_amount
 tolls_amount
 total_amount
-"""
+'''
+
+#Load Data
 appdata={}
-samplefiles=['data/nytaxi2013sample.csv', 'data/nytaxi2014sample.csv']
-print 'loading {0}...'.format(samplefiles[0]), 
-appdata['taxi_df'] = pd.read_csv(samplefiles[0], index_col=None, parse_dates=['pickup_datetime', 'dropoff_datetime'], date_parser = (lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))) 
+print 'Loading from database...',
+appdata['taxi_df'] = pd.read_sql_query('SELECT * FROM tripdata LIMIT ' + app.config['SAMPLESIZE'], engine)
 print 'ok'
 
-print 'loading {0}...'.format(samplefiles[1]), 
-appdata['taxi_df'] = appdata['taxi_df'].append(pd.read_csv(samplefiles[1], index_col=None, parse_dates=['pickup_datetime', 'dropoff_datetime'], date_parser = (lambda x: pd.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))))
+#create geojson Multipoint
+print 'Creating geometry objects...',
+appdata['pickup_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['pickup_longitude'], appdata['taxi_df']['pickup_latitude'])])
+appdata['dropoff_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['dropoff_longitude'], appdata['taxi_df']['dropoff_latitude'])])
 print 'ok'
-#DEBUG
-#sliced to reduce load time
-samplepoints=5000
-appdata['pickup_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['pickup_longitude'][:samplepoints], appdata['taxi_df']['pickup_latitude'][:samplepoints])])
-appdata['dropoff_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['dropoff_longitude'][:samplepoints], appdata['taxi_df']['dropoff_latitude'][:samplepoints])])
 
-print 'appdata loaded...'
 
 # user class for providing authentication
 class User(UserMixin):
@@ -145,6 +153,6 @@ def load_taxi_data():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8000, use_reloader=True)
+    app.run(port=app.config['PORT'], use_reloader=True)
 
 
