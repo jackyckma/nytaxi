@@ -10,7 +10,7 @@ import os
 import settings
 
 ##initializing the server
-print 'Initializing...',
+print 'Initializing',
 
 #Set environment variable nytaxi_config to change the config
 nytaxi_config=os.getenv('nytaxi_config', 'DEBUG')
@@ -19,6 +19,8 @@ print '[MODE={0}]...'.format(nytaxi_config),
 app = Flask(__name__)
 if nytaxi_config == 'DEBUG':
     app.config.from_object(settings.DevelopmentConfig)
+elif nytaxi_config == 'OD_DEBUG':
+	app.config.from_object(settings.OD_DevelopmentConfig)
 elif nytaxi_config == 'TEST':
     app.config.from_object(settings.TestingConfig)
 else:
