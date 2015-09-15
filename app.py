@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, render_template_string, url_for, send_from_directory, jsonify
+from flask import Flask, flash, render_template, request, redirect, render_template_string, url_for, send_from_directory, jsonify
 import flask.json
 from sqlalchemy import create_engine, MetaData
 from flask.ext.login import UserMixin, LoginManager, login_user, logout_user
@@ -77,17 +77,37 @@ print 'ok'
 
 
 # user class for providing authentication
+class UserNotFoundError(Exception):
+    pass
+
 class User(UserMixin):
+    USERS = {
+        # username: password
+        'jackyma': 'password',
+        'vagrant': 'vagrant'
+    }
+    
     def __init__(self, user_id):
+        if not user_id in self.USERS:
+            raise UserNotFoundError()
         self.id = user_id
+        self.password = self.USERS[user_id]
 
     def get_name(self):
         return "Jacky Ma"  # typically the user's name
 
+    @classmethod
+    def get(self_class, id):
+        '''Return user instance of id, return None if not exist'''
+        try:
+            return self_class(id)
+        except UserNotFoundError:
+            return None
+            
 @login_manager.user_loader
 @blog_engine.user_loader
 def load_user(user_id):
-    return User(user_id)
+    return User.get(user_id)
 
 blog_index_template = """
 <!DOCTYPE html>
@@ -111,14 +131,29 @@ def blogmeta():
     
 @app.route("/login/")
 def login():
-    user = User("testuser")
-    login_user(user)
-    return redirect("/blog")
+    return '''
+        <form action="/login/check" method="post">
+            <p>Username: <input name="username" type="text"></p>
+            <p>Password: <input name="password" type="password"></p>
+            <input type="submit">
+        </form>
+    '''
 
+@app.route('/login/check', methods=['post'])
+def login_check():
+    # validate username and password
+    user = User.get(request.form['username'])
+    if (user and user.password == request.form['password']):
+        login_user(user)
+    else:
+        flash('Username or password incorrect')
+
+    return redirect(url_for('index'))
+    
 @app.route("/logout/")
 def logout():
     logout_user()
-    return redirect("/")
+    return redirect(url_for('index'))
 
 @app.route('/blogfile/<filename>')
 def blogfile(filename):
