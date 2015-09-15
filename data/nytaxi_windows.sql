@@ -29,9 +29,9 @@ SELECT AddGeometryColumn('tripdata','geom_pickup',4326,'POINT',2);
 SELECT AddGeometryColumn('tripdata','geom_dropoff',4326,'POINT',2);
 
 \echo 'INSERT 2013 SAMPLE DATA'
-\COPY tripdata (medallion, hack_license, vendor_id, rate_code, store_and_fwd_flag, pickup_datetime, dropoff_datetime, passenger_count, trip_distance, pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude, payment_type, fare_amount, surcharge, mta_tax, tip_amount, tolls_amount, total_amount) FROM 'nytaxi2013sample.csv' DELIMITER ',' CSV HEADER;
+\COPY tripdata (medallion, hack_license, vendor_id, rate_code, store_and_fwd_flag, pickup_datetime, dropoff_datetime, passenger_count, trip_distance, pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude, payment_type, fare_amount, surcharge, mta_tax, tip_amount, tolls_amount, total_amount) FROM 'D:\jacky\Research\GitHub\nytaxi\data\nytaxi2013sample.csv' DELIMITER ',' CSV HEADER;
 \echo 'INSERT 2014 SAMPLE DATA'
-\COPY tripdata (medallion, hack_license, vendor_id, rate_code, store_and_fwd_flag, pickup_datetime, dropoff_datetime, passenger_count, trip_distance, pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude, payment_type, fare_amount, surcharge, mta_tax, tip_amount, tolls_amount, total_amount) FROM 'nytaxi2014sample.csv' DELIMITER ',' CSV HEADER;
+\COPY tripdata (medallion, hack_license, vendor_id, rate_code, store_and_fwd_flag, pickup_datetime, dropoff_datetime, passenger_count, trip_distance, pickup_longitude, pickup_latitude, dropoff_longitude, dropoff_latitude, payment_type, fare_amount, surcharge, mta_tax, tip_amount, tolls_amount, total_amount) FROM 'D:\jacky\Research\GitHub\nytaxi\data\nytaxi2014sample.csv' DELIMITER ',' CSV HEADER;
 
 
 \echo 'UPDATE GEOMETRY COLUMNS'
