@@ -183,10 +183,26 @@ def references_page():
 def about_page():
     return render_template('about.html')
 
-@app.route("/loaddata", methods=["GET", "POST"])
-def load_taxi_data():
-	print 'AJAX load data'
-	return geojson.dumps(appdata['pickup_location'])
+@app.route("/loaddata/<querystr>", methods=["GET", "POST"])
+def load_taxi_data(querystr):
+	print 'AJAX load data: {0}'.format(querystr)
+	data=None
+	dataslice=None
+	print appdata['taxi_df'].describe()
+	if 'longtrip' in querystr:
+		dataslice = appdata['taxi_df']
+		dataslice = dataslice[dataslice.trip_distance>1.90]
+	elif 'shorttrip' in querystr:
+		dataslice = appdata['taxi_df']
+		dataslice = dataslice[dataslice.trip_distance<=1.90]
+	else: #assume alltrip
+		dataslice = appdata['taxi_df']
+		
+	if 'pickup' in querystr:
+		data = geojson.MultiPoint([(x,y) for x,y in zip(dataslice['pickup_longitude'], dataslice['pickup_latitude'])])
+	else: #assume dropoff
+		data = geojson.MultiPoint([(x,y) for x,y in zip(dataslice['dropoff_longitude'], dataslice['dropoff_latitude'])])
+	return geojson.dumps(data)
 
 
 if __name__ == "__main__":
