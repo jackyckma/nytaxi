@@ -290,4 +290,7 @@ def load_taxi_data(querystr):
 
 
 if __name__ == "__main__":
-    app.run(port=app.config['PORT'], use_reloader=True)
+	if nytaxi_config == 'OD_DEBUG':
+		app.run(host=app.config['HOST'], port=app.config['PORT'], use_reloader=True)
+	else:
+    	app.run(port=app.config['PORT'], use_reloader=True)
