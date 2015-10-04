@@ -12,7 +12,7 @@ NY Taxi
 {% block extrastyle %}
 	<link href='https://api.mapbox.com/mapbox.js/v2.2.2/mapbox.css' rel='stylesheet' />
 	<link href='{{url_for("static", filename="css/easy-button.css")}}' rel='stylesheet'/>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+	<link href='{{url_for("static", filename="css/leaflet-messagebox.css")}}' rel='stylesheet'/>
 	<link rel="stylesheet" href="http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
 	<style>
 	body, html {
@@ -31,40 +31,27 @@ NY Taxi
 	<script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
 	<script src='https://api.mapbox.com/mapbox.js/v2.2.2/mapbox.js'></script>
 	<script src="{{url_for('static', filename='js/easy-button.js')}}"></script>
+	<script src="{{url_for('static', filename='js/leaflet-messagebox.js')}}"></script>
 	<script>
-	
-	var geojsonMarkerOptions = {
-		radius: 5,
-		fillColor: "#ff7800",
-		color: "#ff7800",
-		weight: 1,
-		opacity: 0.8,
-		fillOpacity: 0.2
+
+
+	var geojsonFeatureOptions = {
+		pickdrop: "all",
+		tripdist: "all",
+		weekday: "all",
+		hour: "all",
+		income: "all",
+		cartype: "taxi"
 	};
 
-	var state_pickup_dropoff = "pickup";
-	var state_trip_distance = "alltrip";
-	
-	var geojsonLayer=L.geoJson();
 
 	jQuery(window).resize(function() {
 		jQuery("#map").height($(window).height());
 	});
-	
-	function loadGeoJson(){	
-		queryStr= state_pickup_dropoff + ":" + state_trip_distance;
-		jQuery.getJSON("/loaddata/" + queryStr, function(data) {
-			map.removeLayer(geojsonLayer);
-			geojsonLayer = L.geoJson(data, {
-				pointToLayer: function (feature, latlng) {
-					return L.circleMarker(latlng, geojsonMarkerOptions);
-				}
-			});
-			geojsonLayer.addTo(map);
-		});	
-	}
-	
-	</script>		
+
+
+
+	</script>
 {% endblock extrajs_front %}
 
 {%block rightpane %}
@@ -74,90 +61,272 @@ NY Taxi
 
 {% block extrajs %}
 	<script>
-	//Resize the map onload	
+	function mystyle(feature){
+			return {
+				radius: 2.5,
+				weight: 1,
+				opacity: 0.8,
+				fillOpacity: 0.5,
+				color: feature.properties.color
+			}
+	}
+
+	function filterDateTime(){
+		e = document.getElementById("dayfilter");
+		day_selected = e.options[e.selectedIndex].value;
+		e = document.getElementById("timefilter");
+		time_selected = e.options[e.selectedIndex].value;
+		geojsonFeatureOptions.weekday=day_selected;
+		geojsonFeatureOptions.hour=time_selected;
+		map.closePopup();
+		loadGeoJson();
+	}
+
+  function dialogHTML(){
+		template = '<b>Filter by ' + geojsonFeatureOptions.weekday + '</b><br/><br/> <select id="dayfilter"><option value="all">All</option><option value="weekday">Weekday</option><option value="weekend">Weekend</option></select><br/><b>Filter by ' + geojsonFeatureOptions.hour + '</b><br/><br/> <select id="timefilter"><option value="all">All</option><option value="0000">00:00</option><option value="0200">02:00</option><option value="0400">04:00</option><option value="0600">06:00</option><option value="0800">08:00</option><option value="1000">10:00</option><option value="1200">12:00</option><option value="1400">14:00</option><option value="1600">16:00</option><option value="1800">18:00</option><option value="2000">20:00</option><option value="2200">22:00</option><<option value="peak">Peak Hour</option><option value="night">Night Time</option><option value="late">Late Night</option></select><button onClick="filterDateTime()" type="button">Filter</button>'
+		return template
+	}
+
+	function loadGeoJson(){
+		queryStr= "/loaddata/" +
+			"pickdrop=" + geojsonFeatureOptions.pickdrop +
+			"&tripdist=" + geojsonFeatureOptions.tripdist +
+			"&weekday=" + geojsonFeatureOptions.weekday +
+			"&hour=" + geojsonFeatureOptions.hour +
+			"&income=" + geojsonFeatureOptions.income;
+		jQuery.getJSON(queryStr, function(data) {
+			map.removeLayer(myLayer);
+			myLayer = L.geoJson(data, {
+				pointToLayer: function (feature, latlng) {
+					return L.circleMarker(latlng, mystyle(feature));
+				},
+				filter:function(feature, layer) {
+					if (geojsonFeatureOptions.cartype == "all") {
+						if (geojsonFeatureOptions.pickdrop == "all"){
+							return true;
+						}else{
+							return (feature.properties.status=="uber") || (feature.properties.status==geojsonFeatureOptions.pickdrop);
+						}
+					}
+					if (geojsonFeatureOptions.cartype == "uber") {
+						return feature.properties.status=="uber";
+					}
+					if (geojsonFeatureOptions.cartype == "taxi") {
+						if (geojsonFeatureOptions.pickdrop == "all"){
+							return feature.properties.status!="uber";
+						}else{
+							return feature.properties.status==geojsonFeatureOptions.pickdrop;
+						}
+					}
+				}
+			});
+			myLayer.addTo(map);
+		});
+	};
+
+	function animateData(){
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="0000";
+			box.show('00:00');
+			loadGeoJson();
+		}, 0000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="0200";
+			box.show('02:00');
+			loadGeoJson();
+		}, 3000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="0400";
+			box.show('04:00');
+			loadGeoJson();
+		}, 6000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="0600";
+			box.show('06:00');
+			loadGeoJson();
+		}, 9000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="0800";
+			box.show('08:00');
+			loadGeoJson();
+		}, 12000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="1000";
+			box.show('10:00');
+			loadGeoJson();
+		}, 15000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="1200";
+			box.show('12:00');
+			loadGeoJson();
+		}, 18000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="1400";
+			box.show('14:00');
+			loadGeoJson();
+		}, 21000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="1600";
+			box.show('16:00');
+			loadGeoJson();
+		}, 24000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="1800";
+			box.show('18:00');
+			loadGeoJson();
+		}, 27000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="2000";
+			box.show('20:00');
+			loadGeoJson();
+		}, 30000);
+		setTimeout(function(){
+			geojsonFeatureOptions.hour="2200";
+			box.show('22:00');
+			loadGeoJson();
+		}, 33000);
+	}
+
+	///======================================================
+  /// Initialize Map
+	///======================================================
+
+	//Resize the map onload
 	jQuery("#map").height($(window).height());
 
-	//Create the map and tilesLayer	
-	var map = L.mapbox.map('map').setView([40.7073, -74.006], 13);
-	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-		id: 'jackyma.nbhe11nj',
-		accessToken: 'pk.eyJ1IjoiamFja3ltYSIsImEiOiJiMzJiM2Y4OGE2ODk3Y2NhMjcyZDgwN2QxYmRkZWUyZSJ9.GsWNZSqJziWBlci-06UaoA'
-		}).addTo(map);
+  L.mapbox.accessToken = 'pk.eyJ1IjoiamFja3ltYSIsImEiOiJiMzJiM2Y4OGE2ODk3Y2NhMjcyZDgwN2QxYmRkZWUyZSJ9.GsWNZSqJziWBlci-06UaoA'
+	//Create the map and tilesLayer
+	var map = L.mapbox.map('map', 'mapbox.streets').setView([40.754638, -73.983555], 13);
+	var myLayer=L.geoJson();
 
-	map.addLayer(geojsonLayer);
-	loadGeoJson("pickup");
+	var box = L.control.messagebox({ timeout: 3000 }).addTo(map);
+
+	//Add feature layer
+	loadGeoJson()
+	latlng = L.latLng(40.754638, -73.983555);
 
 
-	var button_cal = L.easyButton( 'fa-calendar', function(control){
-		 alert('"filter by weekday"');
-	})
 
-	var button_clock = L.easyButton( 'fa-clock-o', function(control){
-		 alert('"filter by time"');
-	})
-	
-	var button_bar = L.easyBar([button_cal, button_clock]);
-	button_bar.addTo(map);
-	
+	///======================================================
+  /// Add Easy Buttons
+	///======================================================
+
 	L.easyButton({
 		states: [{
-			stateName: 'add-markers',
+			stateName: 'taxi',
 			icon: 'fa-taxi',
-			title: 'taxi',
+			title: 'Taxi',
 			onClick: function(control) {
-				map.removeLayer(geojsonLayer);
-				control.state('remove-markers');
+				geojsonFeatureOptions.cartype='uber';
+				loadGeoJson();
+				control.state('uber');
 			}
 		}, {
-			stateName: 'remove-markers',
-			title: 'remove markers',
-			icon: 'fa-stop',
+			stateName: 'uber',
+			icon: '<strong>U</strong>',
+			title: 'Uber',
 			onClick: function(control) {
-				map.addLayer(geojsonLayer);
-				control.state('add-markers');
+				geojsonFeatureOptions.cartype='all';
+				loadGeoJson();
+				control.state('all');
+			}
+		}, {
+			stateName: 'all',
+			title: 'Taxi & Uber',
+			icon: 'ion-ios-medical',
+			onClick: function(control) {
+				geojsonFeatureOptions.cartype='taxi';
+				loadGeoJson();
+				control.state('taxi');
 			}
 		}]
 	}).addTo(map);
 
 
-	L.easyButton( 'fa-dollar', function(control){
-		 alert('"expensive query here"');
-	}).addTo(map);	
-	
+	var button_cal = L.easyButton( 'fa-calendar', function(control){
+		var popup = L.popup()
+		.setLatLng(latlng)
+		.setContent(dialogHTML())
+		.openOn(map);
+	})
+
+	var button_play = L.easyButton( 'fa-play', function(control){
+		animateData();
+	})
+
+	var button_bar = L.easyBar([button_cal, button_play]);
+	button_bar.addTo(map);
+
 	L.easyButton({
 		states: [{
+			stateName: 'all',
+			title: 'all drivers',
+			icon: 'fa-dollar',
+			onClick: function(control) {
+				geojsonFeatureOptions.income='high';
+				loadGeoJson();
+				control.state('rich');
+			}
+		}, {
+			stateName: 'rich',
+			title: 'rich drivers',
+			icon: 'fa-thumbs-o-up',
+			onClick: function(control) {
+				geojsonFeatureOptions.income='low';
+				loadGeoJson();
+				control.state('poor');
+			}
+		}, {
+			stateName: 'poor',
+			title: 'poor driver',
+			icon: 'fa-thumbs-o-down',
+			onClick: function(control) {
+				geojsonFeatureOptions.income='all';
+				loadGeoJson();
+				control.state('all');
+			}
+		}]
+	}).addTo(map);
+
+	L.easyButton({
+		states: [{
+			stateName: 'all',
+			title: 'all locations',
+			icon: 'fa-sort',
+			onClick: function(control) {
+				geojsonFeatureOptions.pickdrop='pickup';
+				loadGeoJson();
+				control.state('pickup');
+			}
+		}, {
 			stateName: 'pickup',
 			title: 'pickup',
-			icon: 'fa-arrow-circle-up',
+			icon: 'fa-sort-asc',
 			onClick: function(control) {
-				geojsonMarkerOptions.fillColor="#336600";
-				geojsonMarkerOptions.color="#336600";
-				state_pickup_dropoff = "dropoff";
+				geojsonFeatureOptions.pickdrop='dropoff';
 				loadGeoJson();
 				control.state('dropoff');
 			}
 		}, {
 			stateName: 'dropoff',
 			title: 'dropoff',
-			icon: 'fa-arrow-circle-down',
+			icon: 'fa-sort-desc',
 			onClick: function(control) {
-				geojsonMarkerOptions.fillColor= "#ff7800";
-				geojsonMarkerOptions.color= "#ff7800";		
-				state_pickup_dropoff = "pickup";
+				geojsonFeatureOptions.pickdrop='all';
 				loadGeoJson();
-				control.state('pickup');
+				control.state('all');
 			}
 		}]
 	}).addTo(map);
 
-	
+
 	L.easyButton({
 		states: [{
 			stateName: 'alltrip',
 			title: 'alltrip',
 			icon: 'fa-arrows',
 			onClick: function(control) {
-				state_trip_distance = "longtrip";
+				geojsonFeatureOptions.tripdist = "long";
 				loadGeoJson();
 				control.state('longtrip');
 			}
@@ -166,7 +335,7 @@ NY Taxi
 			title: 'longtrip',
 			icon: 'fa-expand',
 			onClick: function(control) {
-				state_trip_distance = "shorttrip";
+				geojsonFeatureOptions.tripdist = "short";
 				loadGeoJson();
 				control.state('shorttrip');
 			}
@@ -175,7 +344,7 @@ NY Taxi
 			title: 'shorttrip',
 			icon: 'fa-compress',
 			onClick: function(control) {
-				state_trip_distance = "alltrip";
+				geojsonFeatureOptions.tripdist = "all";
 				loadGeoJson();
 				control.state('alltrip');
 			}
@@ -183,6 +352,6 @@ NY Taxi
 	}).addTo(map);
 
 	</script>
-	
 
-{% endblock extrajs %}	
+
+{% endblock extrajs %}

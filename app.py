@@ -5,6 +5,7 @@ from flask.ext.login import UserMixin, LoginManager, login_user, logout_user
 from flask.ext.blogging import SQLAStorage, BloggingEngine
 import pandas as pd
 import geojson
+import random
 from geoalchemy2 import Geometry
 import os
 import settings
@@ -20,14 +21,14 @@ app = Flask(__name__)
 if nytaxi_config == 'DEBUG':
     app.config.from_object(settings.DevelopmentConfig)
 elif nytaxi_config == 'OD_DEBUG':
-	app.config.from_object(settings.OD_DevelopmentConfig)
+    app.config.from_object(settings.OD_DevelopmentConfig)
 elif nytaxi_config == 'TEST':
     app.config.from_object(settings.TestingConfig)
 else:
     app.config.from_object(settings.ProductionConfig)
-    
+
 # extensions
-engine = create_engine(app.config['DATABASE_URI']) 
+engine = create_engine(app.config['DATABASE_URI'])
 meta = MetaData()
 sql_storage = SQLAStorage(engine, metadata=meta)
 blog_engine = BloggingEngine(app, sql_storage)
@@ -66,8 +67,12 @@ total_amount
 #Load Data
 appdata={}
 print 'Loading from database...',
-appdata['taxi_df'] = pd.read_sql_query('SELECT * FROM tripdata LIMIT ' + app.config['SAMPLESIZE'], engine)
+appdata['taxi_df'] = pd.read_sql_query('SELECT * FROM tripdata WHERE random() <' + app.config['SAMPLESIZE'], engine)
+appdata['hack_fare_df'] = pd.read_sql_query('SELECT * FROM hack_fare_all where trips > 100 order by avg_total', engine)
+appdata['uber_df'] = pd.read_sql_query('SELECT * FROM uber_trip WHERE random() <' + app.config['SAMPLESIZE'], engine)
 print 'ok'
+print '{0} trip samples loaded'.format(len(appdata['taxi_df']))
+print '{0} hack_driver records loaded'.format(len(appdata['hack_fare_df']))
 
 #create geojson Multipoint
 print 'Creating geometry objects...',
@@ -86,7 +91,7 @@ class User(UserMixin):
         'jackyma': 'password',
         'vagrant': 'vagrant'
     }
-    
+
     def __init__(self, user_id):
         if not user_id in self.USERS:
             raise UserNotFoundError()
@@ -103,7 +108,7 @@ class User(UserMixin):
             return self_class(id)
         except UserNotFoundError:
             return None
-            
+
 @login_manager.user_loader
 @blog_engine.user_loader
 def load_user(user_id):
@@ -128,7 +133,7 @@ blog_index_template = """
 @app.route("/blogmeta")
 def blogmeta():
     return render_template_string(blog_index_template)
-    
+
 @app.route("/login/")
 def login():
     return '''
@@ -149,7 +154,7 @@ def login_check():
         flash('Username or password incorrect')
 
     return redirect(url_for('index'))
-    
+
 @app.route("/logout/")
 def logout():
     logout_user()
@@ -159,7 +164,7 @@ def logout():
 def blogfile(filename):
     # show the user profile for that user
     return send_from_directory('static/blogfiles', filename, as_attachment=True)
-    
+
 
 
 #Regular Navigations
@@ -170,7 +175,7 @@ def index():
 @app.route("/nytaxi/")
 def nytaxi_page():
     return render_template('nytaxi.html')
-            
+
 @app.route("/blogpage/")
 def blog_page():
     return redirect("/blog")
@@ -178,34 +183,110 @@ def blog_page():
 @app.route("/references/")
 def references_page():
     return render_template('references.html')
-    
+
 @app.route("/about/")
 def about_page():
     return render_template('about.html')
 
 @app.route("/loaddata/<querystr>", methods=["GET", "POST"])
 def load_taxi_data(querystr):
-	print 'AJAX load data: {0}'.format(querystr)
-	data=None
-	dataslice=None
-	print appdata['taxi_df'].describe()
-	if 'longtrip' in querystr:
-		dataslice = appdata['taxi_df']
-		dataslice = dataslice[dataslice.trip_distance>1.90]
-	elif 'shorttrip' in querystr:
-		dataslice = appdata['taxi_df']
-		dataslice = dataslice[dataslice.trip_distance<=1.90]
-	else: #assume alltrip
-		dataslice = appdata['taxi_df']
-		
-	if 'pickup' in querystr:
-		data = geojson.MultiPoint([(x,y) for x,y in zip(dataslice['pickup_longitude'], dataslice['pickup_latitude'])])
-	else: #assume dropoff
-		data = geojson.MultiPoint([(x,y) for x,y in zip(dataslice['dropoff_longitude'], dataslice['dropoff_latitude'])])
-	return geojson.dumps(data)
+    print 'AJAX load data: {0}'.format(querystr)
+    data=None
+    taxi_df=appdata['taxi_df']
+    uber_df=appdata['uber_df']
+    queryitems={}
+
+    print 'Query Str:', querystr
+
+    for p_pair in querystr.split('&'):
+        p_key, p_value = p_pair.split('=')
+        queryitems[p_key] = p_value
+
+    print 'Query Items:', queryitems
+
+    # slice on long vs short trip
+
+    sample_scale=1
+    if (queryitems['hour']!='all'): sample_scale = 24
+    if (queryitems['weekday']=='weekend'): sample_scale *= 2.5
+
+    uberslice = uber_df.sample(n=1250 * sample_scale)
+    dataslice = taxi_df.sample(n=4500 * sample_scale)
+
+    dataslice={
+        'all': dataslice,
+        'long': dataslice[dataslice.trip_distance>1.90],
+        'short': dataslice[dataslice.trip_distance<=1.90]
+    }[queryitems['tripdist']]
+
+    # slice on driver income
+    # set top 10000 and bottom 10000 income drivers
+    df_hf=appdata['hack_fare_df']
+    hacks={
+        'all':set(df_hf['hack_license']),
+        'low':set(df_hf[:10000]['hack_license']),
+        'high':set(df_hf[-10000:]['hack_license'])
+    }[queryitems['income']]
+    print '{0} drivers selected'.format(len(hacks))
+    dataslice=dataslice[dataslice.hack_license.isin(hacks)]
+
+    # slice on day and time
+    # l=k[k.pickup_datetime.dt.dayofweek ==3]
+    # l=k[k.pickup_datetime.dt.hour ==3]
+    if ((queryitems['weekday']!='all') or (queryitems['hour']!='all')):
+        weekday_filter={
+            'weekday':[0,1,2,3,4], # 0 - Monday, 6 - Sunday
+            'weekend': [5,6],
+            'all': range(7)
+        }[queryitems['weekday']]
+        time_filter={
+            '0000': [0, 1],
+            '0200': [2, 3],
+            '0400': [4, 5],
+            '0600': [6, 7],
+            '0800': [8, 9],
+            '1000': [10, 11],
+            '1200': [12, 13],
+            '1400': [14, 15],
+            '1600': [16, 17],
+            '1800': [18, 19],
+            '2000': [20 ,21],
+            '2200': [22, 23],
+            'peak': [8, 9, 17, 18],
+            'night': [19, 20, 21, 22],
+            'late': [1, 2, 3, 4],
+            'all': range(24)
+        }[queryitems['hour']]
+        dataslice=dataslice[dataslice.pickup_datetime.dt.dayofweek.isin(weekday_filter) &\
+            dataslice.pickup_datetime.dt.hour.isin(time_filter)]
+        uberslice=uberslice[uberslice['datetime'].dt.dayofweek.isin(weekday_filter) &\
+            uberslice['datetime'].dt.hour.isin(time_filter)]
+
+
+    print dataslice.describe()
+    print uberslice.describe()
+
+
+    # valid value for queryitems['location'] = 'pickup' or 'dropoff'
+    pickup_points = geojson.MultiPoint([(x,y) for x,y in zip(
+        dataslice['pickup_longitude'], dataslice['pickup_latitude'])])
+    dropoff_points = geojson.MultiPoint([(x,y) for x,y in zip(
+        dataslice['dropoff_longitude'], dataslice['dropoff_latitude'])])
+    uber_points = geojson.MultiPoint([(x,y) for x,y in zip(
+        uberslice['longitude'], uberslice['latitude'])])
+
+    pickup_feature = geojson.Feature(geometry=pickup_points,properties={\
+        'status':'pickup',
+        'color': '#ff7800'})
+    dropoff_feature = geojson.Feature(geometry=dropoff_points, properties={\
+        'status':'dropoff',
+        'color': '#006799'})
+    uber_feature = geojson.Feature(geometry=uber_points, properties={\
+        'status':'uber',
+        'color': '#449933'})
+    data = geojson.FeatureCollection([pickup_feature, dropoff_feature, uber_feature])
+    return geojson.dumps(data)
 
 
 if __name__ == "__main__":
     app.run(port=app.config['PORT'], use_reloader=True)
-
-

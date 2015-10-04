@@ -12,16 +12,17 @@ NY Taxi
 {% endblock title %}
 </title>
 <!-- Google Font-->
-<link href="https://fonts.googleapis.com/css?family=Lato:400,700,900,300" rel="stylesheet" type="text/css"/> 
+<link href="https://fonts.googleapis.com/css?family=Lato:400,700,900,300" rel="stylesheet" type="text/css"/>
 <!-- Foundation Icons-->
 <link href='http://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.css' rel='stylesheet' type='text/css'/>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 <!-- If you are using the CSS version, only link these 2 files, you may add app.css to use for your overrides if you like -->
 <link rel="stylesheet" href="{{url_for('static', filename='css/normalize.css')}}"/>
 <link rel="stylesheet" href="{{url_for('static', filename='css/foundation.css')}}"/>
 <!-- If you are using the gem version, you need this only -->
 <link rel="stylesheet" href="{{url_for('static', filename='css/app.css')}}"/>
 <script src="{{url_for('static', filename='js/vendor/modernizr.js')}}"></script>
-<style>	
+<style>
 .lato {
 	font-family: 'Lato', sans-serif;
 }
@@ -73,7 +74,7 @@ NY Taxi
 }
 
 
-</style> 
+</style>
 {% block extrastyle %}
 {% endblock extrastyle %}
 
@@ -92,7 +93,7 @@ NY Taxi
 			<aside class="left-off-canvas-menu">
 				<div class="icon-bar vertical five-up">
 					<a class="item" href="{{url_for('nytaxi_page')}}">
-						<i class="fi-arrows-in"></i>
+						<i class="fa fa-taxi"></i>
 						<label>NY Taxi </label>
 					</a>
 					<a class="item" href="{{url_for('blog_page')}}">
@@ -151,11 +152,11 @@ NY Taxi
 	$(window).resize(function() {
 		sideNav();
 	});
-	
+
 	sideNav();
 	</script>
 
     {% block extrajs %}
-    {% endblock extrajs %}	
+    {% endblock extrajs %}
 </body>
 </html>
