@@ -1,10 +1,11 @@
-from flask import Flask, flash, render_template, request, redirect, render_template_string, url_for, send_from_directory, jsonify
+from flask import Flask, flash, render_template, request, redirect,\
+    render_template_string, url_for, send_from_directory
 from flask.ext.login import UserMixin, LoginManager, login_user, logout_user
 from flask.ext.blogging import SQLAStorage, BloggingEngine
 import flask.json
 import geojson
-from geoalchemy2 import Geometry
 from sqlalchemy import create_engine, MetaData
+from geoalchemy2 import Geometry
 import pandas as pd
 import random
 
@@ -15,7 +16,7 @@ import settings
 print 'Initializing',
 
 #Set environment variable nytaxi_config to change the config
-nytaxi_config=os.getenv('nytaxi_config', 'DEBUG')
+nytaxi_config = os.getenv('nytaxi_config', 'DEBUG')
 print '[MODE={0}]...'.format(nytaxi_config),
 
 app = Flask(__name__)
@@ -37,7 +38,6 @@ login_manager = LoginManager(app)
 meta.create_all(bind=engine)
 
 print 'ok'
-
 
 # data fields
 '''
@@ -66,7 +66,7 @@ total_amount
 '''
 
 #Load Data
-appdata={}
+appdata = {}
 print 'Loading from database...',
 appdata['taxi_df'] = pd.read_sql_query('SELECT * FROM tripdata WHERE random() <' + app.config['SAMPLESIZE'], engine)
 appdata['hack_fare_df'] = pd.read_sql_query('SELECT * FROM hack_fare_all where trips > 100 order by avg_total', engine)
@@ -74,11 +74,11 @@ appdata['uber_df'] = pd.read_sql_query('SELECT * FROM uber_trip WHERE random() <
 print 'ok'
 print '{0} trip samples loaded'.format(len(appdata['taxi_df']))
 print '{0} hack_driver records loaded'.format(len(appdata['hack_fare_df']))
+print '{0} uber trip records loaded'.format(len(appdata['uber_df']))
 
-#create geojson Multipoint
-print 'Creating geometry objects...',
-appdata['pickup_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['pickup_longitude'], appdata['taxi_df']['pickup_latitude'])])
-appdata['dropoff_location']= geojson.MultiPoint([(x,y) for x,y in zip(appdata['taxi_df']['dropoff_longitude'], appdata['taxi_df']['dropoff_latitude'])])
+#Load CSV Data
+print 'Loading from CSv...',
+appdata['hotspots_df'] = pd.read_csv('./data/clusters.csv')
 print 'ok'
 
 
@@ -103,10 +103,10 @@ class User(UserMixin):
         return "Jacky Ma"  # typically the user's name
 
     @classmethod
-    def get(self_class, id):
+    def get(self_class, uid):
         '''Return user instance of id, return None if not exist'''
         try:
-            return self_class(id)
+            return self_class(uid)
         except UserNotFoundError:
             return None
 
@@ -192,10 +192,11 @@ def about_page():
 @app.route("/loaddata/<querystr>", methods=["GET", "POST"])
 def load_taxi_data(querystr):
     print 'AJAX load data: {0}'.format(querystr)
-    data=None
-    taxi_df=appdata['taxi_df']
-    uber_df=appdata['uber_df']
-    queryitems={}
+    data = None
+    taxi_df = appdata['taxi_df']
+    uber_df = appdata['uber_df']
+    hotspots_df = appdata['hotspots_df']
+    queryitems = {}
 
     print 'Query Str:', querystr
 
@@ -207,40 +208,49 @@ def load_taxi_data(querystr):
 
     # slice on long vs short trip
 
-    sample_scale=1
-    if (queryitems['hour']!='all'): sample_scale = 24
-    if (queryitems['weekday']=='weekend'): sample_scale *= 2.5
+    sample_scale = 1
+    if (queryitems['hour'] != 'all'): sample_scale = 24
+    if (queryitems['weekday'] == 'weekend'): sample_scale *= 2.5
 
     uberslice = uber_df.sample(n=1250 * sample_scale)
     dataslice = taxi_df.sample(n=4500 * sample_scale)
+    hotspotsslice_1 = hotspots_df[800 < hotspots_df['items']]
+    hotspotsslice_2 = hotspots_df[400 < hotspots_df['items']]
+    hotspotsslice_3 = hotspots_df[200 < hotspots_df['items']]
+    hotspotsslice_4 = hotspots_df[100 < hotspots_df['items']]
 
-    dataslice={
+    dataslice = {
         'all': dataslice,
-        'long': dataslice[dataslice.trip_distance>1.90],
-        'short': dataslice[dataslice.trip_distance<=1.90]
+        'long': dataslice[dataslice.trip_distance > 1.90],
+        'short': dataslice[dataslice.trip_distance <= 1.90]
     }[queryitems['tripdist']]
 
     # slice on driver income
     # set top 10000 and bottom 10000 income drivers
-    df_hf=appdata['hack_fare_df']
-    hacks={
+    df_hf = appdata['hack_fare_df']
+    hacks = {
         'all':set(df_hf['hack_license']),
         'low':set(df_hf[:10000]['hack_license']),
         'high':set(df_hf[-10000:]['hack_license'])
     }[queryitems['income']]
     print '{0} drivers selected'.format(len(hacks))
-    dataslice=dataslice[dataslice.hack_license.isin(hacks)]
+    dataslice = dataslice[dataslice.hack_license.isin(hacks)]
 
     # slice on day and time
     # l=k[k.pickup_datetime.dt.dayofweek ==3]
     # l=k[k.pickup_datetime.dt.hour ==3]
-    if ((queryitems['weekday']!='all') or (queryitems['hour']!='all')):
-        weekday_filter={
-            'weekday':[0,1,2,3,4], # 0 - Monday, 6 - Sunday
-            'weekend': [5,6],
+    if ((queryitems['weekday'] != 'all') or (queryitems['hour'] != 'all')):
+        weekday_filter = {
+            'weekday':[0, 1, 2, 3, 4], # 0 - Monday, 6 - Sunday
+            'weekend': [5, 6],
             'all': range(7)
         }[queryitems['weekday']]
-        time_filter={
+        hotspot_dow_filter = {
+            'weekday':[1],
+            'weekend': [0],
+            'all': [0,1]
+        }[queryitems['weekday']]
+        time_filter = {
             '0000': [0, 1],
             '0200': [2, 3],
             '0400': [4, 5],
@@ -251,46 +261,90 @@ def load_taxi_data(querystr):
             '1400': [14, 15],
             '1600': [16, 17],
             '1800': [18, 19],
-            '2000': [20 ,21],
+            '2000': [20, 21],
             '2200': [22, 23],
-            'peak': [8, 9, 17, 18],
-            'night': [19, 20, 21, 22],
+            'peak': [8, 9, 16, 17],
+            'night': [20, 21, 22, 23],
             'late': [1, 2, 3, 4],
             'all': range(24)
         }[queryitems['hour']]
-        dataslice=dataslice[dataslice.pickup_datetime.dt.dayofweek.isin(weekday_filter) &\
+        dataslice = dataslice[dataslice.pickup_datetime.dt.dayofweek.isin(weekday_filter) &\
             dataslice.pickup_datetime.dt.hour.isin(time_filter)]
-        uberslice=uberslice[uberslice['datetime'].dt.dayofweek.isin(weekday_filter) &\
+        uberslice = uberslice[uberslice['datetime'].dt.dayofweek.isin(weekday_filter) &\
             uberslice['datetime'].dt.hour.isin(time_filter)]
+        hotspotsslice_1 = hotspots_df[hotspots_df['weekdays'].isin(hotspot_dow_filter) &\
+            hotspots_df['hour'].isin(time_filter) & (300 <= hotspots_df['items'])]
+        hotspotsslice_2 = hotspots_df[hotspots_df['weekdays'].isin(hotspot_dow_filter) &\
+            hotspots_df['hour'].isin(time_filter) & (100 <= hotspots_df['items']) & (hotspots_df['items'] < 300)]
+        hotspotsslice_3 = hotspots_df[hotspots_df['weekdays'].isin(hotspot_dow_filter) &\
+            hotspots_df['hour'].isin(time_filter) & (30 <= hotspots_df['items']) & (hotspots_df['items'] < 100)]
+        hotspotsslice_4 = hotspots_df[hotspots_df['weekdays'].isin(hotspot_dow_filter) &\
+            hotspots_df['hour'].isin(time_filter) & (10 <= hotspots_df['items']) & (hotspots_df['items'] < 30)]
 
 
     print dataslice.describe()
     print uberslice.describe()
+    print hotspotsslice_1.describe()
+    print hotspotsslice_2.describe()
+    print hotspotsslice_3.describe()
+    print hotspotsslice_4.describe()
 
 
     # valid value for queryitems['location'] = 'pickup' or 'dropoff'
-    pickup_points = geojson.MultiPoint([(x,y) for x,y in zip(
+    pickup_points = geojson.MultiPoint([(x, y) for x, y in zip(
         dataslice['pickup_longitude'], dataslice['pickup_latitude'])])
-    dropoff_points = geojson.MultiPoint([(x,y) for x,y in zip(
+    dropoff_points = geojson.MultiPoint([(x, y) for x, y in zip(
         dataslice['dropoff_longitude'], dataslice['dropoff_latitude'])])
-    uber_points = geojson.MultiPoint([(x,y) for x,y in zip(
+    uber_points = geojson.MultiPoint([(x, y) for x, y in zip(
         uberslice['longitude'], uberslice['latitude'])])
+    hotspots_1_points = geojson.MultiPoint([(x, y) for x, y in zip(
+        hotspotsslice_1['lng'], hotspotsslice_1['lat'])])
+    hotspots_2_points = geojson.MultiPoint([(x, y) for x, y in zip(
+        hotspotsslice_2['lng'], hotspotsslice_2['lat'])])
+    hotspots_3_points = geojson.MultiPoint([(x, y) for x, y in zip(
+        hotspotsslice_3['lng'], hotspotsslice_3['lat'])])
+    hotspots_4_points = geojson.MultiPoint([(x, y) for x, y in zip(
+        hotspotsslice_4['lng'], hotspotsslice_4['lat'])])
 
-    pickup_feature = geojson.Feature(geometry=pickup_points,properties={\
+    pickup_feature = geojson.Feature(geometry=pickup_points, properties={\
         'status':'pickup',
+        'radius':2.5,
         'color': '#ff7800'})
     dropoff_feature = geojson.Feature(geometry=dropoff_points, properties={\
         'status':'dropoff',
+        'radius':2.5,
         'color': '#006799'})
     uber_feature = geojson.Feature(geometry=uber_points, properties={\
         'status':'uber',
+        'radius':2.5,
         'color': '#449933'})
-    data = geojson.FeatureCollection([pickup_feature, dropoff_feature, uber_feature])
+    hotspots_1_feature = geojson.Feature(geometry=hotspots_1_points, properties={\
+        'status':'hotspots',
+        'hotspots':1,
+        'radius':25,
+        'color': '#dc143c'})
+    hotspots_2_feature = geojson.Feature(geometry=hotspots_2_points, properties={\
+        'status':'hotspots',
+        'hotspots':1,
+        'radius':15,
+        'color': '#dc143c'})
+    hotspots_3_feature = geojson.Feature(geometry=hotspots_3_points, properties={\
+        'status':'hotspots',
+        'hotspots':1,
+        'radius':8.5,
+        'color': '#dc143c'})
+    hotspots_4_feature = geojson.Feature(geometry=hotspots_4_points, properties={\
+        'status':'hotspots',
+        'hotspots':1,
+        'radius':5,
+        'color': '#dc143c'})
+    data = geojson.FeatureCollection([pickup_feature, dropoff_feature, uber_feature,\
+        hotspots_1_feature, hotspots_2_feature, hotspots_3_feature, hotspots_4_feature])
     return geojson.dumps(data)
 
 
 if __name__ == "__main__":
-	if nytaxi_config == 'OD_DEBUG':
-		app.run(host=app.config['HOST'], port=app.config['PORT'], use_reloader=True)
-	else:
-    	app.run(port=app.config['PORT'], use_reloader=True)
+    if nytaxi_config == 'OD_DEBUG':
+        app.run(host=app.config['HOST'], port=app.config['PORT'], use_reloader=True)
+    else:
+        app.run(port=app.config['PORT'], use_reloader=True)

@@ -41,7 +41,8 @@ NY Taxi
 		weekday: "all",
 		hour: "all",
 		income: "all",
-		cartype: "taxi"
+		cartype: "taxi",
+		hotspots: 1
 	};
 
 
@@ -63,7 +64,7 @@ NY Taxi
 	<script>
 	function mystyle(feature){
 			return {
-				radius: 2.5,
+				radius: feature.properties.radius,
 				weight: 1,
 				opacity: 0.8,
 				fillOpacity: 0.5,
@@ -83,7 +84,7 @@ NY Taxi
 	}
 
   function dialogHTML(){
-		template = '<b>Filter by ' + geojsonFeatureOptions.weekday + '</b><br/><br/> <select id="dayfilter"><option value="all">All</option><option value="weekday">Weekday</option><option value="weekend">Weekend</option></select><br/><b>Filter by ' + geojsonFeatureOptions.hour + '</b><br/><br/> <select id="timefilter"><option value="all">All</option><option value="0000">00:00</option><option value="0200">02:00</option><option value="0400">04:00</option><option value="0600">06:00</option><option value="0800">08:00</option><option value="1000">10:00</option><option value="1200">12:00</option><option value="1400">14:00</option><option value="1600">16:00</option><option value="1800">18:00</option><option value="2000">20:00</option><option value="2200">22:00</option><<option value="peak">Peak Hour</option><option value="night">Night Time</option><option value="late">Late Night</option></select><button onClick="filterDateTime()" type="button">Filter</button>'
+		template = '<b>Filter by ' + geojsonFeatureOptions.weekday + '</b><br/><br/> <select id="dayfilter"><option value="all">All</option><option value="weekday">Weekdays</option><option value="weekend">Weekends</option></select><br/><b>Filter by ' + geojsonFeatureOptions.hour + '</b><br/><br/> <select id="timefilter"><option value="all">Whole Day</option><option value="0000">00:00 - 02:00</option><option value="0200">02:00 - 04:00</option><option value="0400">04:00 - 06:00</option><option value="0600">06:00 - 08:00</option><option value="0800">08:00 - 10:00</option><option value="1000">10:00 - 12:00</option><option value="1200">12:00 - 14:00</option><option value="1400">14:00 - 16:00</option><option value="1600">16:00 - 18:00</option><option value="1800">18:00 - 20:00</option><option value="2000">20:00 - 22:00</option><option value="2200">22:00 - 00:00</option><<option value="peak">Peak Hours</option><option value="night">Night Time</option><option value="late">Late Night</option></select><button onClick="filterDateTime()" type="button">Filter</button>'
 		return template
 	}
 
@@ -101,21 +102,23 @@ NY Taxi
 					return L.circleMarker(latlng, mystyle(feature));
 				},
 				filter:function(feature, layer) {
-					if (geojsonFeatureOptions.cartype == "all") {
-						if (geojsonFeatureOptions.pickdrop == "all"){
-							return true;
-						}else{
-							return (feature.properties.status=="uber") || (feature.properties.status==geojsonFeatureOptions.pickdrop);
+					if (feature.properties.status=='hotspots'){
+						return geojsonFeatureOptions.hotspots;
+					}else{
+						if (geojsonFeatureOptions.cartype == "all") {
+							if (geojsonFeatureOptions.pickdrop == "all"){
+								return (feature.properties.status=="uber") || (feature.properties.status==geojsonFeatureOptions.pickdrop);
+							}
 						}
-					}
-					if (geojsonFeatureOptions.cartype == "uber") {
-						return feature.properties.status=="uber";
-					}
-					if (geojsonFeatureOptions.cartype == "taxi") {
-						if (geojsonFeatureOptions.pickdrop == "all"){
-							return feature.properties.status!="uber";
-						}else{
-							return feature.properties.status==geojsonFeatureOptions.pickdrop;
+						if (geojsonFeatureOptions.cartype == "uber") {
+							return feature.properties.status=="uber";
+						}
+						if (geojsonFeatureOptions.cartype == "taxi") {
+							if (geojsonFeatureOptions.pickdrop == "all"){
+								return feature.properties.status!="uber";
+							}else{
+								return feature.properties.status==geojsonFeatureOptions.pickdrop;
+							}
 						}
 					}
 				}
@@ -127,62 +130,62 @@ NY Taxi
 	function animateData(){
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="0000";
-			box.show('00:00');
+			box.show('00:00 - 02:00');
 			loadGeoJson();
 		}, 0000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="0200";
-			box.show('02:00');
+			box.show('02:00 - 04:00');
 			loadGeoJson();
 		}, 3000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="0400";
-			box.show('04:00');
+			box.show('04:00 - 06:00');
 			loadGeoJson();
 		}, 6000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="0600";
-			box.show('06:00');
+			box.show('06:00 - 08:00');
 			loadGeoJson();
 		}, 9000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="0800";
-			box.show('08:00');
+			box.show('08:00 - 10:00');
 			loadGeoJson();
 		}, 12000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="1000";
-			box.show('10:00');
+			box.show('10:00 - 12:00');
 			loadGeoJson();
 		}, 15000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="1200";
-			box.show('12:00');
+			box.show('12:00 - 14:00');
 			loadGeoJson();
 		}, 18000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="1400";
-			box.show('14:00');
+			box.show('14:00 - 16:00');
 			loadGeoJson();
 		}, 21000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="1600";
-			box.show('16:00');
+			box.show('16:00 - 18:00');
 			loadGeoJson();
 		}, 24000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="1800";
-			box.show('18:00');
+			box.show('18:00 - 20:00');
 			loadGeoJson();
 		}, 27000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="2000";
-			box.show('20:00');
+			box.show('20:00 - 22:00');
 			loadGeoJson();
 		}, 30000);
 		setTimeout(function(){
 			geojsonFeatureOptions.hour="2200";
-			box.show('22:00');
+			box.show('22:00 - 00:00');
 			loadGeoJson();
 		}, 33000);
 	}
@@ -242,6 +245,27 @@ NY Taxi
 		}]
 	}).addTo(map);
 
+	L.easyButton({
+		states: [{
+			stateName: 'hotspots-on',
+			title: 'hotspots on',
+			icon: 'fa-bullseye',
+			onClick: function(control) {
+				geojsonFeatureOptions.hotspots=false;
+				loadGeoJson();
+				control.state('hotspots-off');
+			}
+		}, {
+			stateName: 'hotspots-off',
+			title: 'hotspots on',
+			icon: 'fa-circle-o',
+			onClick: function(control) {
+				geojsonFeatureOptions.hotspots=true;
+				loadGeoJson();
+				control.state('hotspots-on');
+			}
+		}]
+	}).addTo(map);
 
 	var button_cal = L.easyButton( 'fa-calendar', function(control){
 		var popup = L.popup()
