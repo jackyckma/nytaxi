@@ -8,17 +8,19 @@ from sqlalchemy import create_engine, MetaData
 from geoalchemy2 import Geometry
 import pandas as pd
 import random
-
 import os
+
+# settings is a package which stores the configrations for the server
 import settings
 
-##initializing the server
+# initializing the server
 print 'Initializing',
 
-#Set environment variable nytaxi_config to change the config
+# allow users to use environment variable $nytaxi_config to change the config
 nytaxi_config = os.getenv('nytaxi_config', 'DEBUG')
 print '[MODE={0}]...'.format(nytaxi_config),
 
+# initialize the configurations accorund to $nytaxi_config
 app = Flask(__name__)
 if nytaxi_config == 'DEBUG':
     app.config.from_object(settings.DevelopmentConfig)
@@ -29,7 +31,7 @@ elif nytaxi_config == 'TEST':
 else:
     app.config.from_object(settings.ProductionConfig)
 
-# extensions
+# extensions required by flask-blog / sqlalchemy
 engine = create_engine(app.config['DATABASE_URI'])
 meta = MetaData()
 sql_storage = SQLAStorage(engine, metadata=meta)
@@ -39,7 +41,7 @@ meta.create_all(bind=engine)
 
 print 'ok'
 
-# data fields
+# data fields of taxi_df for references
 '''
 fields in taxi_df
 =================
@@ -65,32 +67,34 @@ tolls_amount
 total_amount
 '''
 
-#Load Data
+# load Data
 appdata = {}
 print 'Loading from database...',
 appdata['taxi_df'] = pd.read_sql_query('SELECT * FROM tripdata WHERE random() <' + app.config['SAMPLESIZE'], engine)
 appdata['hack_fare_df'] = pd.read_sql_query('SELECT * FROM hack_fare_all where trips > 100 order by avg_total', engine)
 appdata['uber_df'] = pd.read_sql_query('SELECT * FROM uber_trip WHERE random() <' + app.config['SAMPLESIZE'], engine)
 print 'ok'
-print '{0} trip samples loaded'.format(len(appdata['taxi_df']))
-print '{0} hack_driver records loaded'.format(len(appdata['hack_fare_df']))
-print '{0} uber trip records loaded'.format(len(appdata['uber_df']))
 
-#Load CSV Data
+# load CSV Data
 print 'Loading from CSv...',
 appdata['hotspots_df'] = pd.read_csv('./data/clusters.csv')
 print 'ok'
 
+# description of the data
+print '{0} taxi trip samples'.format(len(appdata['taxi_df']))
+print '{0} hack driver records'.format(len(appdata['hack_fare_df']))
+print '{0} uber trip records'.format(len(appdata['uber_df']))
+print '{0} hotspots records'.format(len(appdata['hotspots_df']))
 
-# user class for providing authentication
+
+
+# class for blog user authentication
 class UserNotFoundError(Exception):
     pass
 
 class User(UserMixin):
     USERS = {
-        # username: password
-        'jackyma': 'password',
-        'vagrant': 'vagrant'
+        app.config['BLOGGING_USER']: app.config['BLOGGING_PASSWORD'],
     }
 
     def __init__(self, user_id):
@@ -100,7 +104,7 @@ class User(UserMixin):
         self.password = self.USERS[user_id]
 
     def get_name(self):
-        return "Jacky Ma"  # typically the user's name
+        return app.config['BLOGGING_UNAME'] 
 
     @classmethod
     def get(self_class, uid):
@@ -110,31 +114,15 @@ class User(UserMixin):
         except UserNotFoundError:
             return None
 
+
+# flask modules
 @login_manager.user_loader
 @blog_engine.user_loader
 def load_user(user_id):
     return User.get(user_id)
 
-blog_index_template = """
-<!DOCTYPE html>
-<html>
-    <head> </head>
-    <body>
-        {% if current_user.is_authenticated() %}
-            <a href="/logout/">Logout</a>
-        {% else %}
-            <a href="/login/">Login</a>
-        {% endif %}
-        &nbsp&nbsp<a href="/blog/">Blog</a>
-        &nbsp&nbsp<a href="/blog/sitemap.xml">Sitemap</a>
-        &nbsp&nbsp<a href="/blog/feeds/all.atom.xml">ATOM</a>
-    </body>
-</html>
-"""
-@app.route("/blogmeta")
-def blogmeta():
-    return render_template_string(blog_index_template)
 
+# login page
 @app.route("/login/")
 def login():
     return '''
@@ -147,7 +135,6 @@ def login():
 
 @app.route('/login/check', methods=['post'])
 def login_check():
-    # validate username and password
     user = User.get(request.form['username'])
     if (user and user.password == request.form['password']):
         login_user(user)
@@ -156,19 +143,20 @@ def login_check():
 
     return redirect(url_for('index'))
 
+# logout user and redirect to front page
 @app.route("/logout/")
 def logout():
     logout_user()
     return redirect(url_for('index'))
 
+# to retrieve static files for blog
 @app.route('/blogfile/<filename>')
 def blogfile(filename):
     # show the user profile for that user
     return send_from_directory('static/blogfiles', filename, as_attachment=True)
 
 
-
-#Regular Navigations
+# regular navigation pages
 @app.route("/")
 def index():
     return redirect("/nytaxi")
@@ -189,6 +177,9 @@ def references_page():
 def about_page():
     return render_template('about.html')
 
+
+# url used by nytaxi.html to retrieve data
+# core of the whole program
 @app.route("/loaddata/<querystr>", methods=["GET", "POST"])
 def load_taxi_data(querystr):
     print 'AJAX load data: {0}'.format(querystr)
@@ -198,27 +189,29 @@ def load_taxi_data(querystr):
     hotspots_df = appdata['hotspots_df']
     queryitems = {}
 
-    print 'Query Str:', querystr
-
     for p_pair in querystr.split('&'):
         p_key, p_value = p_pair.split('=')
         queryitems[p_key] = p_value
 
-    print 'Query Items:', queryitems
 
-    # slice on long vs short trip
-
+	# fix sampling rate for varius time duration
     sample_scale = 1
     if (queryitems['hour'] != 'all'): sample_scale = 24
-    if (queryitems['weekday'] == 'weekend'): sample_scale *= 2.5
+    if (queryitems['weekday'] == 'weekday'): sample_scale *= (7/5.0)
+    if (queryitems['weekday'] == 'weekend'): sample_scale *= (7/2.0)
 
+	# sample the data
     uberslice = uber_df.sample(n=1250 * sample_scale)
     dataslice = taxi_df.sample(n=4500 * sample_scale)
+    
+    # slice the hotspots according to the density
+	# used when day and time = all
     hotspotsslice_1 = hotspots_df[800 < hotspots_df['items']]
     hotspotsslice_2 = hotspots_df[400 < hotspots_df['items']]
     hotspotsslice_3 = hotspots_df[200 < hotspots_df['items']]
     hotspotsslice_4 = hotspots_df[100 < hotspots_df['items']]
 
+	# slice the trip data according to distance selected
     dataslice = {
         'all': dataslice,
         'long': dataslice[dataslice.trip_distance > 1.90],
@@ -226,7 +219,6 @@ def load_taxi_data(querystr):
     }[queryitems['tripdist']]
 
     # slice on driver income
-    # set top 10000 and bottom 10000 income drivers
     df_hf = appdata['hack_fare_df']
     hacks = {
         'all':set(df_hf['hack_license']),
@@ -237,9 +229,8 @@ def load_taxi_data(querystr):
     dataslice = dataslice[dataslice.hack_license.isin(hacks)]
 
     # slice on day and time
-    # l=k[k.pickup_datetime.dt.dayofweek ==3]
-    # l=k[k.pickup_datetime.dt.hour ==3]
     if ((queryitems['weekday'] != 'all') or (queryitems['hour'] != 'all')):
+    	# set filter values
         weekday_filter = {
             'weekday':[0, 1, 2, 3, 4], # 0 - Monday, 6 - Sunday
             'weekend': [5, 6],
@@ -268,10 +259,12 @@ def load_taxi_data(querystr):
             'late': [1, 2, 3, 4],
             'all': range(24)
         }[queryitems['hour']]
+        # do the slicing for trip data
         dataslice = dataslice[dataslice.pickup_datetime.dt.dayofweek.isin(weekday_filter) &\
             dataslice.pickup_datetime.dt.hour.isin(time_filter)]
         uberslice = uberslice[uberslice['datetime'].dt.dayofweek.isin(weekday_filter) &\
             uberslice['datetime'].dt.hour.isin(time_filter)]
+        # slicing for hotspot data
         hotspotsslice_1 = hotspots_df[hotspots_df['weekdays'].isin(hotspot_dow_filter) &\
             hotspots_df['hour'].isin(time_filter) & (300 <= hotspots_df['items'])]
         hotspotsslice_2 = hotspots_df[hotspots_df['weekdays'].isin(hotspot_dow_filter) &\
@@ -281,7 +274,7 @@ def load_taxi_data(querystr):
         hotspotsslice_4 = hotspots_df[hotspots_df['weekdays'].isin(hotspot_dow_filter) &\
             hotspots_df['hour'].isin(time_filter) & (10 <= hotspots_df['items']) & (hotspots_df['items'] < 30)]
 
-
+	# debug uses - print the statistics on server side
     print dataslice.describe()
     print uberslice.describe()
     print hotspotsslice_1.describe()
@@ -289,8 +282,7 @@ def load_taxi_data(querystr):
     print hotspotsslice_3.describe()
     print hotspotsslice_4.describe()
 
-
-    # valid value for queryitems['location'] = 'pickup' or 'dropoff'
+    # prepare geojson data
     pickup_points = geojson.MultiPoint([(x, y) for x, y in zip(
         dataslice['pickup_longitude'], dataslice['pickup_latitude'])])
     dropoff_points = geojson.MultiPoint([(x, y) for x, y in zip(
@@ -306,6 +298,7 @@ def load_taxi_data(querystr):
     hotspots_4_points = geojson.MultiPoint([(x, y) for x, y in zip(
         hotspotsslice_4['lng'], hotspotsslice_4['lat'])])
 
+	# pack geojson data as features
     pickup_feature = geojson.Feature(geometry=pickup_points, properties={\
         'status':'pickup',
         'radius':2.5,
@@ -338,11 +331,14 @@ def load_taxi_data(querystr):
         'hotspots':1,
         'radius':5,
         'color': '#dc143c'})
+        
+    # pack into geojson FeatureCollection and send to webpage
     data = geojson.FeatureCollection([pickup_feature, dropoff_feature, uber_feature,\
         hotspots_1_feature, hotspots_2_feature, hotspots_3_feature, hotspots_4_feature])
     return geojson.dumps(data)
 
 
+# main procedure
 if __name__ == "__main__":
     if nytaxi_config == 'OD_DEBUG':
         app.run(host=app.config['HOST'], port=app.config['PORT'], use_reloader=True)
