@@ -14,7 +14,11 @@ engine = create_engine(config.DATABASE_URI)
 meta = MetaData()
 meta.create_all(bind=engine)
 
-taxi_df = pd.read_sql_query('SELECT * FROM tripdata WHERE random() < 0.1', engine)
+# for testing
+# taxi_df = pd.read_sql_query('SELECT * FROM tripdata WHERE random() < 0.1', engine)
+# for production
+taxi_df = pd.read_sql_query('SELECT * FROM tripdata', engine)
+
 taxi_data=taxi_df[['pickup_datetime', 'pickup_longitude', 'pickup_latitude']].copy()
 taxi_data.columns=['datetime', 'lng', 'lat']
 taxi_df = None
